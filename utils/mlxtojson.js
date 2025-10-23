@@ -11,11 +11,9 @@ function noteToMidi(noteName) {
 }
 
 function assignColumns(notes) {
-  // Ordenamos por pitch
   const sorted = [...notes].sort((a, b) => a.midi - b.midi);
-  const range = sorted.map(n => n.midi);
-  const min = Math.min(...range);
-  const max = Math.max(...range);
+  const min = Math.min(...sorted.map(n => n.midi));
+  const max = Math.max(...sorted.map(n => n.midi));
   const step = (max - min) / 4;
 
   return notes.map(note => {
@@ -26,14 +24,12 @@ function assignColumns(notes) {
 }
 
 function limitSimultaneous(notes) {
-  // Agrupar por "time"
   const grouped = notes.reduce((acc, n) => {
     acc[n.time] = acc[n.time] || [];
     acc[n.time].push(n);
     return acc;
   }, {});
 
-  // Si hay más de 2 notas simultáneas, quedarnos con las más graves
   const filtered = [];
   Object.values(grouped).forEach(group => {
     const selected = group
@@ -45,18 +41,32 @@ function limitSimultaneous(notes) {
   return filtered.sort((a, b) => a.time - b.time);
 }
 
+
 function parseMusicXML(xmlString) {
   return new Promise((resolve, reject) => {
     xml2js.parseString(xmlString, (err, result) => {
       if (err) return reject(err);
 
-      const divisions = parseInt(result["score-partwise"].part[0].measure[0].attributes?.[0]?.divisions?.[0] || 1);
+      const part = result["score-partwise"].part?.[0];
+      if (!part) return reject("No se encontró ninguna parte en el XML");
+
+      const sound = part.measure?.[0]?.direction?.[0]?.sound?.[0]?.["$"];
+      const tempo = parseFloat(sound?.tempo || 60);
+
+      const divisions = parseInt(
+        part.measure?.[0]?.attributes?.[0]?.divisions?.[0] || 1
+      );
+
+      const msPerBeat = 60000 / tempo; 
+      const msPerDivision = msPerBeat / divisions;
+
       const notes = [];
       let time = 0;
 
-      result["score-partwise"].part[0].measure.forEach(measure => {
+      part.measure.forEach(measure => {
         measure.note?.forEach(n => {
           if (n.rest) return;
+
           const step = n.pitch?.[0]?.step?.[0];
           const octave = n.pitch?.[0]?.octave?.[0];
           const alter = n.pitch?.[0]?.alter?.[0];
@@ -67,8 +77,8 @@ function parseMusicXML(xmlString) {
           notes.push({
             name: noteName,
             midi,
-            time: time * 100, // Escalamos el tiempo (ajústalo)
-            duration: duration * 100, // Escalamos duración
+            time: time * msPerDivision,
+            duration: duration * msPerDivision,
           });
 
           time += duration;
@@ -81,19 +91,30 @@ function parseMusicXML(xmlString) {
 }
 
 async function main() {
-  const xml = fs.readFileSync("fur_elise.xml", "utf8");
+  const inputFile = "fur_elise.xml"; 
+  let xml;
+
+    xml = fs.readFileSync(inputFile, "utf8");
+
   const notes = await parseMusicXML(xml);
-
   const withColumns = assignColumns(notes);
-  const limited = limitSimultaneous(withColumns);
+  const limited = withColumns;
 
-  const SAMPLE_MIDI_DATA = limited.map(n => [n.time, n.column, n.duration, n.name]);
+  const OFFSET = 500; // tiempo inicial para primera nota
+  const GAP = 100;    // mínimo entre notas no simultáneas
+
+  let lastTime = 0;
+  const SAMPLE_MIDI_DATA = limited.map(n => {
+    let adjustedTime = n.time + OFFSET;
+    if (adjustedTime < lastTime + GAP) adjustedTime = lastTime + GAP;
+    lastTime = adjustedTime;
+    return [Math.round(adjustedTime), n.column, Math.round(n.duration), n.name];
+  });
 
   const jsonCompact = "[\n" + SAMPLE_MIDI_DATA.map(n => `  ${JSON.stringify(n)}`).join(",\n") + "\n]";
-  
   fs.writeFileSync("fur_elise.json", jsonCompact);
-  
-  console.log("✅ Exportado");
+
+  console.log("✅ Exportado con offset y espacio entre notas");
 }
 
 main().catch(console.error);

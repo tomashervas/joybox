@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as Tone from 'tone';
 
+
 // --- CONSTANTES DEL JUEGO ---
 const NUM_LANES = 4;
 const TILE_HEIGHT = 150;
@@ -10,20 +11,11 @@ const TILE_COLORS = ['#38bdf8', '#fb7185', '#a78bfa', '#4ade80'];
 const HIT_ZONE_HEIGHT = 300;
 const LOSS_TOLERANCE_PERCENT = 0.20;
 
-// --- DATOS DE LA CANCIÓN (simulados) ---
-const SAMPLE_MIDI_DATA = [
-    [500, 1, 100], [800, 3, 100], [1100, 0, 100], [1400, 2, 100],
-    [1700, 1, 100], [2000, 3, 100], [2300, 0, 100], [2600, 2, 100],
-    [2900, 0, 100], [3150, 1, 100], [3400, 2, 100], [3650, 3, 100],
-    [3900, 0, 100], [4150, 1, 100], [4400, 2, 100], [4650, 3, 100],
-    [5000, 0, 100], [5000, 2, 100],
-    [5500, 1, 100], [5500, 3, 100],
-    [6000, 0, 100], [6000, 1, 100],
-    [6500, 2, 100], [6500, 3, 100],
-    [7000, 1, 100], [7300, 3, 100], [7600, 0, 100], [7900, 2, 100],
-    [8200, 1, 100], [8500, 3, 100], [8800, 0, 100], [9100, 2, 100],
-    [9500, 999, 0] // Marca de fin
-];
+// --- DATOS DE LA CANCIÓN ---
+import furElise from '../../scores/json/fur_elise.json';
+
+type MidiDataEntry = [number, number, number, string]; // [time, lane, duration, noteName]
+const SAMPLE_MIDI_DATA: MidiDataEntry[] = furElise as MidiDataEntry[];
 
 // --- COMPONENTE DEL JUEGO ---
 export default function DroppedTilesGame() {
@@ -66,8 +58,10 @@ export default function DroppedTilesGame() {
         isHit: boolean;
         y: number;
         ctx: CanvasRenderingContext2D;
+        duration: number;
+        noteName: string; // Nueva propiedad para el nombre de la nota
 
-        constructor(lane: number, targetTime: number, duration: number, canvas: HTMLCanvasElement, initialGameTime: number, ctx: CanvasRenderingContext2D) {
+        constructor(lane: number, targetTime: number, duration: number, noteName: string, canvas: HTMLCanvasElement, initialGameTime: number, ctx: CanvasRenderingContext2D) {
             this.lane = lane;
             this.targetTime = targetTime;
             this.height = TILE_HEIGHT;
@@ -75,6 +69,8 @@ export default function DroppedTilesGame() {
             this.color = TILE_COLORS[lane];
             this.isHit = false;
             this.ctx = ctx;
+            this.duration = duration;
+            this.noteName = noteName; // Asignar el nombre de la nota
 
             const distanceToTarget = canvas.height - HIT_ZONE_HEIGHT;
             const timeToFall = distanceToTarget / gameSpeed.current;
@@ -179,8 +175,9 @@ export default function DroppedTilesGame() {
         const timeToFall = distanceToTarget / gameSpeed.current;
 
         while (noteIndex.current < SAMPLE_MIDI_DATA.length) {
-            const [noteTime, lane, duration] = SAMPLE_MIDI_DATA[noteIndex.current];
+            const [noteTime, lane, duration, noteName] = SAMPLE_MIDI_DATA[noteIndex.current];
 
+            // La marca de fin de la canción ahora puede venir con un noteName, pero el lane 999 sigue siendo el indicador.
             if (lane === 999) {
                 noteIndex.current++;
                 return;
@@ -189,7 +186,7 @@ export default function DroppedTilesGame() {
             const timeToStartFalling = noteTime - timeToFall;
 
             if (timeToStartFalling <= gameTime.current) {
-                tiles.current.push(new Tile(lane, noteTime, duration, canvas, gameTime.current, ctx));
+                tiles.current.push(new Tile(lane, noteTime, duration, noteName, canvas, gameTime.current, ctx));
                 noteIndex.current++;
             } else {
                 break;
@@ -274,10 +271,10 @@ export default function DroppedTilesGame() {
             }
     
             if (tileHitForThisInput) {
-                const notes = ['C4', 'D4', 'E4', 'G4'];
-                if (tileLanes.length > 0) {
-                    const note = notes[tileLanes[0]];
-                    synth.current?.triggerAttackRelease(note, '8n', Tone.now());
+                // Ahora la nota se obtiene directamente de la ficha golpeada
+                const hitTile: Tile | undefined = tiles.current.find(tile => tile.isHit); // Encuentra la ficha que fue golpeada
+                if (hitTile) {
+                    synth.current?.triggerAttackRelease(hitTile.noteName, hitTile.duration /1000, Tone.now());
                 }
             }
         });
