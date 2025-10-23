@@ -36,15 +36,13 @@ export default function DroppedTilesGame() {
     // Inicialización del audio
     const setupAudio = () => {
         if (!synth.current) {
-            synth.current = new Tone.PolySynth(Tone.Synth, {
-                oscillator: { type: "triangle" },
-                envelope: {
-                    attack: 0.005,
-                    decay: 0.1,
-                    sustain: 0.1,
-                    release: 0.2
-                }
-            }).toDestination();
+            synth.current = new Tone.PolySynth(Tone.AMSynth, {
+                  harmonicity: 1.01,
+                  oscillator: { type: "triangle" },
+                  envelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 1.5 },
+                  modulation: { type: "sine" },
+                  modulationEnvelope: { attack: 0.005, decay: 0.2, sustain: 0.1, release: 1.5 }
+                }).toDestination();
         }
     };
 
