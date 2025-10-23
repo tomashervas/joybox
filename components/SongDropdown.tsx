@@ -29,7 +29,7 @@ export default function SongDropdown({ category, songs }: SongDropdownProps) {
           {songs.map((song) => (
             <Link
               key={song.id}
-              href={`/dropped-tiles/game?song=${song.id}`}
+              href={`/dropped-tiles/game/${song.id}`}
               className="block px-6 py-3 text-lg text-primary hover:text-secondary"
             >
               {song.title}

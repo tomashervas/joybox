@@ -269,9 +269,16 @@ export default function DroppedTilesGame({ songNotes }: DroppedTilesGameProps ) 
     
             if (tileHitForThisInput) {
                 // Ahora la nota se obtiene directamente de la ficha golpeada
-                const hitTile: Tile | undefined = tiles.current.find(tile => tile.isHit); // Encuentra la ficha que fue golpeada
+                const hitTile: Tile | undefined = tiles.current.find(tile => tile.isHit);
                 if (hitTile) {
-                    synth.current?.triggerAttackRelease(hitTile.noteName, hitTile.duration /1000, Tone.now());
+                    synth.current?.triggerAttackRelease(hitTile.noteName, hitTile.duration / 1000, Tone.now());
+                    // Después de tocar la nota, es importante "desmarcar" la ficha para que no se vuelva a tocar en el siguiente input del mismo frame.
+                    // Esto es crucial en eventos multi-touch.
+                    hitTile.isHit = false;
+                    const tileIndex = tiles.current.findIndex(t => t === hitTile);
+                    if(tileIndex > -1) {
+                         tiles.current.splice(tileIndex, 1);
+                    }
                 }
             }
         });
@@ -292,7 +299,7 @@ export default function DroppedTilesGame({ songNotes }: DroppedTilesGameProps ) 
     };
 
     const handleRestart = () => {
-        startGame();
+        window.location.reload();
     };
 
     useEffect(() => {
