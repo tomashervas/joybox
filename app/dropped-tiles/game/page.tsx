@@ -1,12 +1,11 @@
-'use client';
-
 import Link from 'next/link';
-import DroppedTilesGame from '@/components/dropped-tiles/Game';
+import DroppedTilesGame, { MidiDataEntry } from '@/components/dropped-tiles/Game';
+import furElise from '../../../scores/json/fur_elise.json';
 
 export default function GamePage() {
   return (
     <main className="relative w-screen h-screen bg-gray-900">
-      <DroppedTilesGame />
+      <DroppedTilesGame songNotes={furElise as MidiDataEntry[]} />
       <Link
         href="/dropped-tiles"
         className="absolute top-4 left-4 z-50 bg-gray-800 bg-opacity-50 hover:bg-opacity-75 text-white font-bold p-3 rounded-full transition-all duration-200"

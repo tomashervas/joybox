@@ -3,7 +3,8 @@ import SongDropdown from '@/components/SongDropdown';
 
 export default function DroppedTilesMenu() {
   const classicalSongs = [
-    { id: 'para-elisa', title: 'Para Elisa' },
+    { id: 'fur_elise', title: 'Para Elisa' },
+    { id: 'moonlight_sonata', title: 'Moonlight sonata' },
   ];
 
   return (

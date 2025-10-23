@@ -11,14 +11,13 @@ const TILE_COLORS = ['#38bdf8', '#fb7185', '#a78bfa', '#4ade80'];
 const HIT_ZONE_HEIGHT = 300;
 const LOSS_TOLERANCE_PERCENT = 0.20;
 
-// --- DATOS DE LA CANCIÓN ---
-import furElise from '../../scores/json/fur_elise.json';
+export type MidiDataEntry = [number, number, number, string]; // [time, lane, duration, noteName]
 
-type MidiDataEntry = [number, number, number, string]; // [time, lane, duration, noteName]
-const SAMPLE_MIDI_DATA: MidiDataEntry[] = furElise as MidiDataEntry[];
+interface DroppedTilesGameProps {
+    songNotes: MidiDataEntry[];
+}
 
-// --- COMPONENTE DEL JUEGO ---
-export default function DroppedTilesGame() {
+export default function DroppedTilesGame({ songNotes }: DroppedTilesGameProps ) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const gameWrapperRef = useRef<HTMLDivElement>(null);
     const [score, setScore] = useState(0);
@@ -172,8 +171,8 @@ export default function DroppedTilesGame() {
         const distanceToTarget = canvas.height - HIT_ZONE_HEIGHT;
         const timeToFall = distanceToTarget / gameSpeed.current;
 
-        while (noteIndex.current < SAMPLE_MIDI_DATA.length) {
-            const [noteTime, lane, duration, noteName] = SAMPLE_MIDI_DATA[noteIndex.current];
+        while (noteIndex.current < songNotes.length) {
+            const [noteTime, lane, duration, noteName] = songNotes[noteIndex.current];
 
             // La marca de fin de la canción ahora puede venir con un noteName, pero el lane 999 sigue siendo el indicador.
             if (lane === 999) {
@@ -207,7 +206,7 @@ export default function DroppedTilesGame() {
 
         if (lost) {
             setGameState('gameOver');
-        } else if (noteIndex.current >= SAMPLE_MIDI_DATA.length && tiles.current.length === 0) {
+        } else if (noteIndex.current >= songNotes.length && tiles.current.length === 0) {
             setGameState('victory');
         }
     };
