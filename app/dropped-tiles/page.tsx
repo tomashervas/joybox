@@ -5,6 +5,7 @@ export default function DroppedTilesMenu() {
   const classicalSongs = [
     { id: 'fur_elise', title: 'Para Elisa' },
     { id: 'moonlight_sonata', title: 'Moonlight sonata' },
+    { id:'imperial_march', title: 'Imperial March' }
   ];
 
   return (

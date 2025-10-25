@@ -24,7 +24,7 @@ export default function DroppedTilesGame({ songNotes }: DroppedTilesGameProps ) 
     const [gameState, setGameState] = useState<'idle' | 'running' | 'gameOver' | 'victory'>('idle');
 
     const tiles = useRef<any[]>([]);
-    const gameSpeed = useRef(0.6);
+    const gameSpeed = useRef(0.3);
     const lastTime = useRef(0);
     const gameTime = useRef(0);
     const noteIndex = useRef(0);
@@ -333,6 +333,21 @@ export default function DroppedTilesGame({ songNotes }: DroppedTilesGameProps ) 
             requestAnimationFrame(gameLoop);
         }
     }, [gameState]);
+
+    useEffect(() => {
+        if (gameState === 'gameOver' && synth.current) {
+            synth.current.triggerAttackRelease("E4", 0.2, Tone.now());
+            synth.current.triggerAttackRelease("C4", 0.2, Tone.now() + 0.2);
+            synth.current.triggerAttackRelease("A3", 0.8, Tone.now() + 0.4);
+        }
+
+        if (gameState === 'victory' && synth.current) {
+            synth.current?.triggerAttackRelease("C4", 0.2, Tone.now());
+            synth.current?.triggerAttackRelease("E4", 0.2, Tone.now() + 0.2);
+            synth.current?.triggerAttackRelease("C5", 0.8, Tone.now() + 0.4);
+        }
+
+    }, [gameState, synth]);
 
 
     return (
